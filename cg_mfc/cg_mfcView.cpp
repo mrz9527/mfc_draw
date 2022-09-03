@@ -17,6 +17,7 @@
 #define new DEBUG_NEW
 #endif
 
+#include"C2DrawTask.h"
 
 // CcgmfcView
 
@@ -53,7 +54,7 @@ BOOL CcgmfcView::PreCreateWindow(CREATESTRUCT& cs)
 void CcgmfcView::SetNormalCoordSystem(CDC* pDC)
 {
 	CRect rect;
-	GetClientRect(rect);
+	GetClientRect(&rect);
 
 	// 自定义坐标系
 	// 设置映射模式（作用：把图形显示到设备屏幕坐标系上）
@@ -78,9 +79,9 @@ void CcgmfcView::OnDraw(CDC *pDC)
 	// TODO: 在此处为本机数据添加绘制代码坐标）
 
 	SetNormalCoordSystem(pDC);
-
-	pDC->MoveTo(100, 100);
-	pDC->LineTo(300, 300);
+	
+	C2DrawTask::TaskPt_PixelArray(pDC);
+	C2DrawTask::TaskLine_Triangle(pDC);
 }
 
 
