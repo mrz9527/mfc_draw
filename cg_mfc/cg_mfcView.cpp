@@ -79,9 +79,16 @@ void CcgmfcView::OnDraw(CDC *pDC)
 	// TODO: 在此处为本机数据添加绘制代码坐标）
 
 	SetNormalCoordSystem(pDC);
+
+	CRect rect;
+	GetClientRect(&rect);
+	auto& task = C2DrawTask::Create2DrawTask();
+	task.Init(rect);
 	
-	C2DrawTask::TaskPt_PixelArray(pDC);
-	C2DrawTask::TaskLine_Triangle(pDC);
+	task.TaskPoint_Array(pDC);
+	task.TaskLine_Triangle(pDC);
+	task.TaskRectangle(pDC);
+	task.TaskEllipse(pDC);
 }
 
 
