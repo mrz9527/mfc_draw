@@ -89,6 +89,9 @@ void CcgmfcView::OnDraw(CDC *pDC)
 	task.TaskLine_Triangle(pDC);
 	task.TaskRectangle(pDC);
 	task.TaskEllipse(pDC);
+	task.TaskArc(pDC);
+	task.TaskPie(pDC);
+	task.TaskPie_BaGuaGraph(pDC);
 }
 
 
