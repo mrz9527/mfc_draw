@@ -4,22 +4,11 @@
 class C2DrawTask
 {
 	public:
-	static C2DrawTask& Create2DrawTask() {
+	static C2DrawTask& Create2DrawTask(const CRect& rect) {
 		static C2DrawTask task;
+		task.Init(rect);
+
 		return task;
-	}
-
-	void Init(const CRect& rect) {
-		screenLeftTop.x = -rect.Width() / 2;
-		screenLeftTop.y = rect.Height() / 2;
-
-		screenWidth = rect.Width();
-		screenHeight = rect.Height();
-
-		// edgeLen = screenHeight / 3 - 2 * margin; // 设置动态边长
-		edgeLen = 150; // 设置固定边长
-
-		id = 0;
 	}
 
 	/*
@@ -78,10 +67,76 @@ class C2DrawTask
 	*/
 	void TaskPie_BaGuaGraph(CDC* pDC);
 
+	/*
+	任务：绘制多边形
+	pDC->Ploygon()
+	属性：边界和填充区域
+	*/
+	void TaskPolygon(CDC* pDC);
+
+	/*
+	任务：多边形方式绘制五角星
+	pDC->SetPolyFillMode(); 设置多边形的填充模式。
+		ALTERNATE：默认模式，水平扫描填充，扫描线与多边形相交，交点的奇偶对之间填充颜色。
+		WINDING: 任取多边形内一点，向外作射线，射线与多边形相交，多边形的边按照顺时针或
+			逆时针来表示，逆时针-1，顺时针+1，射线与多边形相交的总和为0则不填充，反之填充
+	*/
+	void TaskPolygon_FiveStar(CDC* pDC);
+
+	/*
+	任务：使用实体颜色来填充矩形
+	pDC->FillSolidRect(rect, color);
+	*/
+	void TaskFillSolidRect(CDC* pDC);
+
+	/*
+	任务：使用画刷来填充矩形
+	pDC->FillRect(rect, brush);
+	*/
+	void TaskFillRect(CDC* pDC);
+
+	/*
+	任务：使用路径层来绘制多边形
+	pDC->BeginPath(); 开始路径层
+	MoveTo()、LineTo() ：绘制多边形
+	pDC->EndPath();	结束路径层
+	pDC->FillPath();使用当前画刷来填充路径
+	pDC->StrokeAndFillPath(); 使用当前画笔来绘制路径边界，使用当前画刷来填充路径
+	*/
+	void TaskPath(CDC* pDC);
+
+	/*
+	任务：绘制一段3阶的bezier曲线.需要四个点
+	pDC->Bezier(pts, ptNum);
+	说明：只支持3次bezier曲线，可以一段bezier曲线，可以是多段光滑的bezier曲线拼接。
+	*/
+	void TaskBezier_Curve(CDC* pDC);
+
+	/*
+	任务：绘制n段光滑连续的3阶bezier曲线，需要的点数为(3n + 1)
+	pDC->Bezier(pts, ptNum);
+	说明：只支持3次bezier曲线，可以一段bezier曲线，可以是多段光滑的bezier曲线拼接。
+	*/
+	void TaskBezier_MulSmoothCurve(CDC* pDC);
+
+
 private:
 	C2DrawTask() = default;
 	C2DrawTask(const C2DrawTask&) = delete;
 	C2DrawTask operator= (const C2DrawTask&) = delete;
+
+	void Init(const CRect& rect) {
+		screenLeftTop.x = -rect.Width() / 2;
+		screenLeftTop.y = rect.Height() / 2;
+
+		screenWidth = rect.Width();
+		screenHeight = rect.Height();
+
+		// edgeLen = screenHeight / 3 - 2 * margin; // 设置动态边长
+		edgeLen = 150; // 设置固定边长
+
+		id = 0;
+	}
 
 	bool GetCurrentPosition(int& row, int& col)
 	{
@@ -113,6 +168,27 @@ private:
 	void IncreaseId() {
 		++id;
 	}
+
+	void DrawPolygon(CDC* pDC, CPoint* pts, int num) {
+		if (num < 2) {
+			return;
+		}
+
+		pDC->MoveTo(pts[0]);
+		for (int i = 1; i < num; ++i) {
+			pDC->LineTo(pts[i]);
+		}
+	}
+	void DrawPtByEllipse(CDC* pDC, CPoint* pts, int num) {
+		if (num < 1) {
+			return;
+		}
+
+		for (int i = 0; i < num; ++i) {
+			pDC->Ellipse(pts[i].x - 5, pts[i].y + 5, pts[i].x + 5, pts[i].y - 5);
+		}
+	}
+
 private:
 	CPoint screenLeftTop{};
 	long screenWidth = 0;

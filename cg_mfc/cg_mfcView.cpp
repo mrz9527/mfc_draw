@@ -82,8 +82,7 @@ void CcgmfcView::OnDraw(CDC *pDC)
 
 	CRect rect;
 	GetClientRect(&rect);
-	auto& task = C2DrawTask::Create2DrawTask();
-	task.Init(rect);
+	auto& task = C2DrawTask::Create2DrawTask(rect);
 	
 	task.TaskPoint_Array(pDC);
 	task.TaskLine_Triangle(pDC);
@@ -92,6 +91,13 @@ void CcgmfcView::OnDraw(CDC *pDC)
 	task.TaskArc(pDC);
 	task.TaskPie(pDC);
 	task.TaskPie_BaGuaGraph(pDC);
+	task.TaskPolygon(pDC);
+	task.TaskPolygon_FiveStar(pDC);
+	task.TaskFillSolidRect(pDC);
+	task.TaskFillRect(pDC);
+	task.TaskPath(pDC);
+	task.TaskBezier_Curve(pDC);
+	task.TaskBezier_MulSmoothCurve(pDC);
 }
 
 

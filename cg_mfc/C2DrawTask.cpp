@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "C2DrawTask.h"
+#include <cmath>
+
+const float MATH_PI = std::atan(1.0f) * 4.0f;
 
 
 void C2DrawTask::TaskPoint_Array(CDC* pDC)
@@ -241,8 +244,233 @@ void C2DrawTask::TaskPie_BaGuaGraph(CDC* pDC)
 	pDC->SelectObject(whiteBrush);
 	pDC->Ellipse(smallRectDown);
 
-
 	pDC->SelectObject(oldBrush);
 	pDC->SetArcDirection(oldArcDirection);
+	IncreaseId();
+}
+
+void C2DrawTask::TaskPolygon(CDC* pDC)
+{
+	CPoint leftTop, rightBottom;
+	if (!GetCurrentArea(leftTop, rightBottom))
+		return;
+
+	CPoint pts[4];
+	pts[0].x = (leftTop.x + rightBottom.x) / 2; // 上
+	pts[0].y = leftTop.y - (leftTop.y - rightBottom.y) / 4;
+
+	pts[1].x = leftTop.x; // 左下
+	pts[1].y = rightBottom.y;
+
+	pts[2] = rightBottom; // 右下
+
+	pts[3] = CPoint(rightBottom.x, leftTop.y);
+
+	// 创建gdi对象：画刷
+	CBrush brush;
+	//brush.CreateSolidBrush(RGB(107, 54, 200)); // 实体画刷
+	brush.CreateHatchBrush(HS_BDIAGONAL, RGB(107, 54, 200));
+
+	auto oldBrush = pDC->SelectObject(brush);
+	pDC->Polygon(pts, sizeof(pts)/sizeof(pts[0]));
+
+	pDC->SelectObject(oldBrush);
+
+	IncreaseId();
+}
+
+void C2DrawTask::TaskPolygon_FiveStar(CDC* pDC)
+{
+	CPoint leftTop, rightBottom;
+	if (!GetCurrentArea(leftTop, rightBottom))
+		return;
+
+	CRect rect(leftTop, rightBottom);
+	auto center = rect.CenterPoint();
+	auto r = (leftTop.y - rightBottom.y) / 2;
+
+	float intervalDegree = 360.0f / 5;
+	float startDegree = 90.0f;
+
+	CPoint pt[5];
+
+	for (int i = 0; i < 5; ++i) {
+		float degree = startDegree + intervalDegree * i;
+		float rad = degree * 2 * MATH_PI / 360;
+		float dx = r * cos(rad);
+		float dy = r * sin(rad);
+		pt[i] = CPoint((int)round(dx + 0.5) + center.x, (int)round(dy + 0.5) + center.y);
+	}
+
+	CPoint fiveStar[5];
+	fiveStar[0] = pt[0];
+	fiveStar[1] = pt[2];
+	fiveStar[2] = pt[4];
+	fiveStar[3] = pt[1];
+	fiveStar[4] = pt[3];
+
+	// 创建gdi对象：红色画笔和蓝色画刷
+	CPen redPen;
+	redPen.CreatePen(0, 3, RGB(255, 0, 0));
+	auto oldPen = pDC->SelectObject(redPen);
+	CBrush blueBrush;
+	blueBrush.CreateSolidBrush(RGB(0, 0, 255));
+	auto oldBrush = pDC->SelectObject(blueBrush);
+
+	pDC->SetPolyFillMode(WINDING);
+	pDC->Polygon(fiveStar, 5);
+
+	pDC->SelectObject(redPen);
+	pDC->SelectObject(blueBrush);
+
+	IncreaseId();
+}
+
+void C2DrawTask::TaskFillSolidRect(CDC* pDC)
+{
+	CPoint leftTop, rightBottom;
+	if (!GetCurrentArea(leftTop, rightBottom))
+		return;
+
+	int n = 12;
+	int xStep = (rightBottom.x - leftTop.x) / n;
+	float colorStep = 256 / n;
+
+	CRect firstRect(leftTop.x, leftTop.y, leftTop.x + (int)xStep, rightBottom.y);
+	CRect rect = firstRect;
+	for (int i = 0; i < 12; ++i) {
+		rect.MoveToX(rect.right); // rect.right = leftTop.x + i * xStep 
+		COLORREF color = RGB(xStep * i, xStep * i, xStep * i);
+		pDC->FillSolidRect(rect, color);
+	}
+
+	IncreaseId();
+}
+
+void C2DrawTask::TaskFillRect(CDC* pDC)
+{
+	CPoint leftTop, rightBottom;
+	if (!GetCurrentArea(leftTop, rightBottom))
+		return;
+
+	CBrush brush;
+	brush.CreateSolidBrush(RGB(0, 255, 0));
+
+	pDC->FillRect(CRect(leftTop, rightBottom), &brush);
+
+	IncreaseId();
+}
+
+void C2DrawTask::TaskPath(CDC* pDC)
+{
+	CPoint leftTop, rightBottom;
+	if (!GetCurrentArea(leftTop, rightBottom))
+		return;
+
+
+	long tempY = abs(leftTop.y - rightBottom.y) / 3;
+	CPoint pt[4];
+	pt[0] = CPoint((leftTop.x + rightBottom.x) / 2, leftTop.y - tempY);
+	pt[1] = CPoint(rightBottom.x, (leftTop.y + rightBottom.y) / 2);
+	pt[2] = CPoint(pt[0].x, rightBottom.y + tempY);
+	pt[3] = CPoint(leftTop.x, pt[1].y);
+
+	// 开始路径层
+	pDC->BeginPath();
+	pDC->MoveTo(pt[0]);
+	for (int i = 1; i < 4; ++i) {
+		pDC->LineTo(pt[i]);
+	}
+	// 关闭路径层
+	pDC->EndPath();
+
+	// 使用当前画刷填充路径层
+	CBrush hatchBrush;
+	hatchBrush.CreateHatchBrush(HS_BDIAGONAL, RGB(44, 44, 44));
+	CBrush* oldBrush = (CBrush*)pDC->SelectObject(&hatchBrush);
+
+	CPen redPen;
+	redPen.CreatePen(0, 3, RGB(255, 0, 0));
+	CPen* oldPen = (CPen*)pDC->SelectObject(&redPen);
+	//pDC->FillPath();
+	pDC->StrokeAndFillPath();
+
+	pDC->SelectObject(oldBrush);
+	pDC->SelectObject(oldPen);
+	IncreaseId();
+}
+
+void C2DrawTask::TaskBezier_Curve(CDC* pDC)
+{
+	CPoint leftTop, rightBottom;
+	if (!GetCurrentArea(leftTop, rightBottom))
+		return;
+
+	CPoint pt[4];
+	pt[0] = CPoint(leftTop.x, rightBottom.y);
+	pt[1] = CPoint((leftTop.x + rightBottom.x) / 2, rightBottom.y);
+	pt[2] = leftTop;
+	pt[3] = CPoint(rightBottom.x, leftTop.y);
+
+	COLORREF black(RGB(0, 0, 0)), red(RGB(255, 0, 0));
+	CPen redPen, blackPen;
+	redPen.CreatePen(0, 1, red);
+	blackPen.CreatePen(0, 3, black);
+	CBrush blackBrush;
+	blackBrush.CreateSolidBrush(black);
+
+	auto oldPen = pDC->SelectObject(blackPen);
+	auto oldBrush = pDC->SelectObject(blackBrush);
+
+	DrawPolygon(pDC, pt, sizeof(pt)/sizeof(pt[0]));
+	DrawPtByEllipse(pDC, pt, sizeof(pt) / sizeof(pt[0]));
+
+	pDC->SelectObject(redPen);
+
+	pDC->PolyBezier(pt, sizeof(pt)/sizeof(pt[0]));
+
+	pDC->SelectObject(oldBrush);
+	pDC->SelectObject(oldPen);
+
+	IncreaseId();
+}
+
+void C2DrawTask::TaskBezier_MulSmoothCurve(CDC* pDC)
+{
+	CPoint leftTop, rightBottom;
+	if (!GetCurrentArea(leftTop, rightBottom))
+		return;
+
+	const int n = 7;
+	CPoint pt[n];
+	pt[0] = CPoint(leftTop.x, rightBottom.y);
+	pt[1] = CPoint(leftTop.x + (rightBottom.x - leftTop.x) / 4, rightBottom.y);
+	pt[2] = CPoint(pt[0].x, (leftTop.y + rightBottom.y) / 2);
+	pt[3] = CPoint((leftTop.x + rightBottom.x)/2, pt[2].y);
+
+	pt[4] = CPoint(rightBottom.x, pt[3].y);
+	pt[5] = CPoint(rightBottom.x - (rightBottom.x - leftTop.x) / 4, leftTop.y);
+	pt[6] = CPoint(rightBottom.x, leftTop.y);
+
+	COLORREF black(RGB(0, 0, 0)), red(RGB(255, 0, 0));
+	CPen redPen, blackPen;
+	redPen.CreatePen(0, 1, red);
+	blackPen.CreatePen(0, 3, black);
+	CBrush blackBrush;
+	blackBrush.CreateSolidBrush(black);
+
+	auto oldPen = pDC->SelectObject(blackPen);
+	auto oldBrush = pDC->SelectObject(blackBrush);
+
+	DrawPolygon(pDC, pt, sizeof(pt) / sizeof(pt[0]));
+	DrawPtByEllipse(pDC, pt, sizeof(pt) / sizeof(pt[0]));
+
+	pDC->SelectObject(redPen);
+
+	pDC->PolyBezier(pt, sizeof(pt) / sizeof(pt[0]));
+
+	pDC->SelectObject(oldBrush);
+	pDC->SelectObject(oldPen);
+
 	IncreaseId();
 }
