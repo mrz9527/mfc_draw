@@ -17,8 +17,9 @@
 #define new DEBUG_NEW
 #endif
 
-#include"C2DrawTask.h"
-
+#include "CoordSystem.h"
+#include "C2DrawTask.h"
+#include "CLayout.h"
 // CcgmfcView
 
 IMPLEMENT_DYNCREATE(CcgmfcView, CView)
@@ -28,6 +29,9 @@ BEGIN_MESSAGE_MAP(CcgmfcView, CView)
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
+	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 // CcgmfcView 构造/析构
@@ -36,6 +40,17 @@ CcgmfcView::CcgmfcView() noexcept
 {
 	// TODO: 在此处添加构造代码
 
+	m_ptArray[0].x = -250, m_ptArray[0].y = 120;
+	m_ptArray[1].x = -200, m_ptArray[1].y = 100;
+	m_ptArray[2].x = 0, m_ptArray[2].y = 100;
+	m_ptArray[3].x = 0, m_ptArray[3].y = -100;
+	m_ptArray[4].x = 200, m_ptArray[4].y = -100;
+	m_ptArray[5].x = 300, m_ptArray[5].y = -150;
+
+	UpdateData();
+
+	m_bBtnDown = false;
+	m_selectPtId = -1;
 }
 
 CcgmfcView::~CcgmfcView()
@@ -50,25 +65,25 @@ BOOL CcgmfcView::PreCreateWindow(CREATESTRUCT& cs)
 	return CView::PreCreateWindow(cs);
 }
 
-// CcgmfcView 绘图
-void CcgmfcView::SetNormalCoordSystem(CDC* pDC)
+void CcgmfcView::DoubleBuffer(CDC* pDC)
 {
 	CRect rect;
 	GetClientRect(&rect);
 
-	// 自定义坐标系
-	// 设置映射模式（作用：把图形显示到设备屏幕坐标系上）
-	// MM_ANISOTROPIC:窗口范围和设备范围可以任意改变，要求使用SetWindowExt函数设置窗口的范围，使用SetViewPortExt函数设置视区的范围
-	pDC->SetMapMode(MM_ANISOTROPIC);
-	// 设置窗口范围函数.SetWindowExtEx(cx, cy); cx和cy是逻辑单位，m、cm、英寸等.
-	pDC->SetWindowExt(rect.Width(), rect.Height());
-	// 设置视区范围函数。SetViewPortExt(cx, cy). cx和cy是设备单位。默认屏幕坐标X向右为正，Y向下为正，这里改为向上为正，符合正常思维。
-	pDC->SetViewportExt(rect.Width(), -rect.Height());
-	// 设置视区原点函数.设置原点为视区的中心
-	pDC->SetViewportOrg(rect.Width() / 2, rect.Height() / 2);
-	rect.OffsetRect(-rect.Width() / 2, -rect.Height());
-}
+	CDC memDC;
+	memDC.CreateCompatibleDC(pDC);
 
+
+	CLayout* layout = &CLayout::GetInstance();
+	layout->Init(rect);
+	C2DrawTask::DoTask2D(pDC, layout);
+
+	//CBezier<CPoint2F>::DoBezier(pDC, m_ptArray, sizeof(m_ptArray)/sizeof(m_ptArray[0]));
+
+	//Draw(pDC);
+	
+	pDC->BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0,0, SRCCOPY);	
+}
 void CcgmfcView::OnDraw(CDC *pDC)
 {
 	CcgmfcDoc* pDoc = GetDocument();
@@ -77,27 +92,11 @@ void CcgmfcView::OnDraw(CDC *pDC)
 		return;
 
 	// TODO: 在此处为本机数据添加绘制代码坐标）
-
-	SetNormalCoordSystem(pDC);
-
 	CRect rect;
 	GetClientRect(&rect);
-	auto& task = C2DrawTask::Create2DrawTask(rect);
-	
-	task.TaskPoint_Array(pDC);
-	task.TaskLine_Triangle(pDC);
-	task.TaskRectangle(pDC);
-	task.TaskEllipse(pDC);
-	task.TaskArc(pDC);
-	task.TaskPie(pDC);
-	task.TaskPie_BaGuaGraph(pDC);
-	task.TaskPolygon(pDC);
-	task.TaskPolygon_FiveStar(pDC);
-	task.TaskFillSolidRect(pDC);
-	task.TaskFillRect(pDC);
-	task.TaskPath(pDC);
-	task.TaskBezier_Curve(pDC);
-	task.TaskBezier_MulSmoothCurve(pDC);
+
+	CoordSystem::SetNormalCoordSystem(pDC, rect);
+	DoubleBuffer(pDC);
 }
 
 
@@ -142,3 +141,57 @@ CcgmfcDoc* CcgmfcView::GetDocument() const // 非调试版本是内联的
 
 
 // CcgmfcView 消息处理程序
+
+
+void CcgmfcView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	//m_bBtnDown = true;
+	
+	CView::OnLButtonDown(nFlags, point);
+}
+
+
+void CcgmfcView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	//m_bBtnDown = false;
+
+	CView::OnLButtonUp(nFlags, point);
+}
+
+
+void CcgmfcView::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	//CRect rect;
+	//GetClientRect(&rect);
+	//CPoint newPt = CoordSystem::TransformToNormalCoordSystem(rect, point);
+
+	//m_selectPtId = -1;
+	//int ptCount = sizeof(m_ptArray) / sizeof(m_ptArray[0]);
+
+	//for (int i = 0; i < ptCount; ++i) {
+	//	if (i > 0 && i < ptCount - 1) { // sLine和eLine暂时不考虑
+	//		CPoint pt = CPoint(int(m_ptArray[i].x + 0.5), int(m_ptArray[i].y + 0.5));
+
+	//		if (abs(pt.x - newPt.x) < 5 && abs(pt.y - newPt.y) < 5) {
+	//			auto cursor = LoadCursor(nullptr, IDC_HAND);
+	//			SetCursor(cursor);
+	//			m_selectPtId = i;
+	//			if (m_bBtnDown) {
+	//				m_ptArray[i].x = newPt.x;
+	//				m_ptArray[i].y = newPt.y;
+	//				break;
+	//			}
+	//		}
+	//	}
+	//}
+
+	//if (m_selectPtId >= 0) {
+	//	UpdateData();
+	//	Invalidate(false);
+	//}
+
+	CView::OnMouseMove(nFlags, point);
+}

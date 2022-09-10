@@ -42,6 +42,15 @@
     <ClInclude Include="C2DrawTask.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CoordSystem.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CBezier.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CLayout.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cg_mfc.cpp">
@@ -60,6 +69,15 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="C2DrawTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CoordSystem.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CBezier.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CLayout.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -81,6 +99,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="res\Toolbar.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\216.bmp">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

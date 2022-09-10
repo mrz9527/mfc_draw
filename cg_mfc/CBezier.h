@@ -10,12 +10,27 @@ struct CPoint2F {
 	float y = 0.0f;
 
 public:
+	CPoint2F() {
+		x = 0.0f;
+		y = 0.0f;
+	}
+
+	CPoint2F(float ix, float iy) {
+		x = ix; 
+		y = iy;
+	}
+	CPoint2F(const CPoint2F& other) {
+		this->x = other.x;
+		this->y = other.y;
+	}
+
 	CPoint2F operator*(float a) {
 		this->x *= a;
 		this->y *= a;
+		return *this;
 	}
 
-	CPoint2F& operator+(const CPoint2F& other) {
+	CPoint2F operator+(const CPoint2F& other) {
 		this->x += other.x;
 		this->y += other.y;
 		return *this;
@@ -38,11 +53,14 @@ template<typename PointType>
 class CBezier
 {
 public:
-	static void DoBezier(CDC* pDC) {
-
+	static void DoBezier(CDC* pDC, PointType* ptArray, int count) {
+		static CBezier bezier;
+		bezier.Init(ptArray, count);
+		bezier.MakeBezier();
+		bezier.Draw(pDC);
 	}
 
-	CBezier(PointType*ptArray, int count, float step = 0.01f, EBezierStepType stepType = EBezierStepType::BST_T) {
+	void Init(PointType*ptArray, int count, float step = 0.01f, EBezierStepType stepType = EBezierStepType::BST_T) {
 		m_ctlPtArray = ptArray;
 		m_ctlPtCount = count;
 
@@ -91,7 +109,7 @@ public:
 private:
 	void DrawBezier(CDC* pDC) {
 		CPen redPen, * oldPen;
-		redPen.CreatePen(PS_SOLID, 1, 0xff0000);
+		redPen.CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
 		
 		// 红色画笔，绘制bezier曲线
 		oldPen = (CPen*)pDC->SelectObject(&redPen);
@@ -110,7 +128,7 @@ private:
 
 	void DrawControlPloygon(CDC* pDC) {
 		CPen blackPen, * oldPen;
-		blackPen.CreatePen(PS_SOLID, 3, 0);
+		blackPen.CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
 
 		// 黑色画笔，绘制控制多边形
 		oldPen = (CPen*)pDC->SelectObject(&blackPen);
@@ -129,7 +147,7 @@ private:
 
 	void DrawControlPt(CDC* pDC) {
 		CPen blackPen, * oldPen;
-		blackPen.CreatePen(PS_SOLID, 3, 0);
+		blackPen.CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
 
 		CBrush blackBrush, * oldBrush;
 		blackBrush.CreateSolidBrush(0);
@@ -162,17 +180,15 @@ private:
 		oldFont = (CFont*)pDC->SelectObject(&font);
 
 		for (int i = 0; i < m_ctlPtCount; ++i) {
-			CPoint pt = CPoint(int(m_ctlPtArray[i].x + 0.5), int(m_ctlPtArray[i].y + 0.5));
+			CPoint pt = CPoint(int(m_ctlPtArray[i].x), int(m_ctlPtArray[i].y));
 			CString strPt;
-			strPt.Format(_T("p%d"), i);
-			pDC->TextOutW(pt.x, pt.y + 8, strPt);
+			strPt.Format(_T("p%d(%d, %d)"), i, pt.x, pt.y);
+			pDC->TextOutW(pt.x + 10, pt.y + 20, strPt);
 		}
 
 		pDC->SetBkMode(oldBkMode);
 		pDC->SelectObject(oldFont);
 	}
-
-
 
 	void ReleaseBezierPtArray() {
 		vector<PointType>().swap(m_bezierPtArray);
@@ -226,8 +242,10 @@ private:
 
 	PointType MakeBn(float t) {
 		PointType pt;
-		for (int i = 0; i < m_ctlPtCount; ++i) { // sigma(0,n)  { p[i] * c(n,i)(1-t)^i * t^(n-i) }
-			pt += m_ctlPtArray[i] * m_cn[i] * pow(1 - t, i) * pow(t, n - i);
+		int n = m_ctlPtCount - 1;
+		for (int i = 0; i < m_ctlPtCount; ++i) { // sigma(0,n)  { p[i] * c(n,i) * t^i * (1 - t)^(n-i) }
+			PointType ctlPt{ m_ctlPtArray[i].x, m_ctlPtArray[i].y };
+			pt += ctlPt * m_cn[i] * pow(t, i) * pow(1 - t, n - i);
 		}
 		return pt;
 	}

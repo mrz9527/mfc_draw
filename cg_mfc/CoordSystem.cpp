@@ -16,3 +16,14 @@ void CoordSystem::SetNormalCoordSystem(CDC* pDC, CRect& rect)
 	pDC->SetViewportOrg(rect.Width() / 2, rect.Height() / 2);
 	rect.OffsetRect(-rect.Width() / 2, -rect.Height());
 }
+
+CPoint CoordSystem::TransformToNormalCoordSystem(const CRect& rect, CPoint pt)
+{
+	CPoint newPt;
+	// Æ½ÒÆ
+	newPt.x = pt.x - rect.Width() / 2;
+	newPt.y = rect.Height() / 2 - pt.y;
+	
+	return newPt;
+}
+

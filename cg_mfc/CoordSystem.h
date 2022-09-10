@@ -11,5 +11,7 @@ public:
 							  也就是说，现在能显示四个象限的视图了
 	*/
 	static void SetNormalCoordSystem(CDC* pDC, CRect& rect);
+
+	static CPoint TransformToNormalCoordSystem(const CRect& rect, CPoint pt);
 };
 
