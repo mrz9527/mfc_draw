@@ -55,10 +55,12 @@ private:
 	}
 
 	void Draw(CDC* pDC) {
-		//DrawLine(pDC, m_sLine);
+		DrawLine(pDC, m_sLine);
+		DrawLineK(pDC, m_sLine);
 		DrawBezier(pDC);
-		/*DrawLine(pDC, m_eLine);
-		DrawEndPt(pDC);*/
+		DrawLine(pDC, m_eLine);
+		DrawLineK(pDC, m_eLine);
+		DrawEndPt(pDC);
 	}
 
 	void DrawLine(CDC* pDC, CPoint2F line[2]) {
@@ -77,6 +79,34 @@ private:
 		}
 
 		pDC->SelectObject(oldPen);
+	}
+
+	float GetLineK(CPoint2F line[2])
+	{
+		return (line[0].y - line[1].y) / (line[0].x - line[1].x);
+	}
+
+	float GetLineK(CPoint2F sPt, CPoint2F ePt)
+	{
+		return (sPt.y - ePt.y) / (sPt.x - ePt.x);
+	}
+
+	float CalcPtBaseLine(CPoint2F sPt, float k, float x)
+	{
+		// y
+		return k * (x - sPt.x) + sPt.y;
+	}
+
+	float CalcPtBaseLine(CPoint2F sPt, CPoint2F ePt, float x)
+	{
+		float k = GetLineK(sPt, ePt);
+		// ePtY
+		return CalcPtBaseLine(sPt, k, x);
+	}
+
+	CPoint2F GetMidPt(CPoint2F line[2])
+	{
+		return CPoint2F((line[0].x + line[1].x) / 2, (line[0].y + line[1].y) / 2);
 	}
 	
 	void DrawEndPt(CDC* pDC) {
@@ -133,6 +163,32 @@ private:
 		pDC->SelectObject(oldBrush);
 	}
 
+	void DrawLineK(CDC* pDC, CPoint2F line[2]) {
+		// 绘制文字
+		auto oldBkMode = pDC->SetBkMode(TRANSPARENT);
+		pDC->SetTextColor(RGB(128, 128, 128));
+
+		LOGFONT lf;
+		memset(&lf, 0, sizeof(lf));
+		lf.lfCharSet = GB2312_CHARSET;
+
+		CFont font, *oldFont;
+		font.CreateFontIndirectW(&lf);
+		oldFont = (CFont*)pDC->SelectObject(&font);
+
+		// 寻找中点，是为了在中点位置输出直线斜率k
+		CPoint2F midPt = GetMidPt(line);
+		float lineK = GetLineK(line);
+
+		CPoint pt = CPoint(int(midPt.x), int(midPt.y));
+		CString strK;
+		strK.Format(_T("k = %.4f"), lineK);
+		pDC->TextOutW(pt.x + 10, pt.y + 20, strK);
+
+		pDC->SetBkMode(oldBkMode);
+		pDC->SelectObject(oldFont);
+	}
+
 	void DrawBezier(CDC* pDC) {
 		CBezier<CPoint2F>::DoBezier(pDC, m_ctlPts, sizeof(m_ctlPts) / sizeof(m_ctlPts[0]));
 	}
@@ -148,6 +204,7 @@ private:
 
 	bool m_bBtnDown;
 	int m_selectPtId;
+	bool m_bFlush;
 
 // 生成的消息映射函数
 protected:

@@ -14,7 +14,6 @@ void CoordSystem::SetNormalCoordSystem(CDC* pDC, CRect& rect)
 	pDC->SetViewportExt(rect.Width(), -rect.Height());
 	// 设置视区原点函数.设置原点为视区的中心
 	pDC->SetViewportOrg(rect.Width() / 2, rect.Height() / 2);
-	rect.OffsetRect(-rect.Width() / 2, -rect.Height());
 }
 
 CPoint CoordSystem::TransformToNormalCoordSystem(const CRect& rect, CPoint pt)
@@ -22,7 +21,7 @@ CPoint CoordSystem::TransformToNormalCoordSystem(const CRect& rect, CPoint pt)
 	CPoint newPt;
 	// 平移
 	newPt.x = pt.x - rect.Width() / 2;
-	newPt.y = rect.Height() / 2 - pt.y;
+	newPt.y = rect.Height() / 2 - pt.y; 
 	
 	return newPt;
 }

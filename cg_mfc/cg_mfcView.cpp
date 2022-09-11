@@ -42,14 +42,21 @@ CcgmfcView::CcgmfcView() noexcept
 
 	m_ptArray[0].x = -250, m_ptArray[0].y = 120;
 	m_ptArray[1].x = -200, m_ptArray[1].y = 100;
-	m_ptArray[2].x = 0, m_ptArray[2].y = 100;
-	m_ptArray[3].x = 0, m_ptArray[3].y = -100;
+	//m_ptArray[2].x = 0, m_ptArray[2].y = 100;
+	//m_ptArray[3].x = 0, m_ptArray[3].y = -100;
 	m_ptArray[4].x = 200, m_ptArray[4].y = -100;
 	m_ptArray[5].x = 300, m_ptArray[5].y = -150;
+
+	m_ptArray[2].x = 0;
+	m_ptArray[2].y = CalcPtBaseLine(m_ptArray[0], m_ptArray[1], m_ptArray[2].x);
+
+	m_ptArray[3].x = 0;
+	m_ptArray[3].y = CalcPtBaseLine(m_ptArray[4], m_ptArray[5], m_ptArray[3].x);
 
 	UpdateData();
 
 	m_bBtnDown = false;
+	m_bFlush = false;
 	m_selectPtId = -1;
 }
 
@@ -67,22 +74,39 @@ BOOL CcgmfcView::PreCreateWindow(CREATESTRUCT& cs)
 
 void CcgmfcView::DoubleBuffer(CDC* pDC)
 {
+	// 自定义pDC二维坐标系
 	CRect rect;
 	GetClientRect(&rect);
+	CoordSystem::SetNormalCoordSystem(pDC, rect);
 
+	// 声明memDC
 	CDC memDC;
 	memDC.CreateCompatibleDC(pDC);
 
+	// 为memDC创建兼容位图，颜色为黑色
+	CBitmap bitmap, * oldBitmap;
+	bitmap.CreateCompatibleBitmap(pDC, rect.Width(), rect.Height());  // 默认黑色位图
+	oldBitmap = (CBitmap*)memDC.SelectObject(&bitmap);
+	//memDC.FillSolidRect(rect, pDC->GetBkColor()); // 填充客户区背景色，覆盖黑色位图
+	memDC.FillSolidRect(rect, RGB(255,250,0)); // 填充客户区背景色，覆盖黑色位图
 
-	CLayout* layout = &CLayout::GetInstance();
-	layout->Init(rect);
-	C2DrawTask::DoTask2D(pDC, layout);
+	// 关键点
+	rect.OffsetRect(-rect.Width()/2, -rect.Height()/2);
 
-	//CBezier<CPoint2F>::DoBezier(pDC, m_ptArray, sizeof(m_ptArray)/sizeof(m_ptArray[0]));
+	// 为memDC自定义与pDC相同的二维坐标系
 
-	//Draw(pDC);
+
+	CoordSystem::SetNormalCoordSystem(&memDC, rect);
+
+	// 在memDC上绘制图形
+	Draw(&memDC);
 	
-	pDC->BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0,0, SRCCOPY);	
+	// memDC中的图形拷贝到pDC上
+	//pDC->BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0, 0, SRCCOPY);
+	pDC->BitBlt(rect.left, rect.top, rect.Width(), rect.Height(), &memDC, rect.left, rect.top, SRCCOPY);
+	memDC.SelectObject(oldBitmap);
+	bitmap.DeleteObject();
+	memDC.DeleteDC();
 }
 void CcgmfcView::OnDraw(CDC *pDC)
 {
@@ -92,10 +116,7 @@ void CcgmfcView::OnDraw(CDC *pDC)
 		return;
 
 	// TODO: 在此处为本机数据添加绘制代码坐标）
-	CRect rect;
-	GetClientRect(&rect);
-
-	CoordSystem::SetNormalCoordSystem(pDC, rect);
+	
 	DoubleBuffer(pDC);
 }
 
@@ -146,7 +167,7 @@ CcgmfcDoc* CcgmfcView::GetDocument() const // 非调试版本是内联的
 void CcgmfcView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	//m_bBtnDown = true;
+	m_bBtnDown = true;
 	
 	CView::OnLButtonDown(nFlags, point);
 }
@@ -155,7 +176,9 @@ void CcgmfcView::OnLButtonDown(UINT nFlags, CPoint point)
 void CcgmfcView::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	//m_bBtnDown = false;
+	m_bBtnDown = false;
+	m_bFlush = false;
+	m_selectPtId = -1;
 
 	CView::OnLButtonUp(nFlags, point);
 }
@@ -164,34 +187,51 @@ void CcgmfcView::OnLButtonUp(UINT nFlags, CPoint point)
 void CcgmfcView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	//CRect rect;
-	//GetClientRect(&rect);
-	//CPoint newPt = CoordSystem::TransformToNormalCoordSystem(rect, point);
+	CRect rect;
+	GetClientRect(&rect);
+	CPoint newPt = CoordSystem::TransformToNormalCoordSystem(rect, point);
 
-	//m_selectPtId = -1;
-	//int ptCount = sizeof(m_ptArray) / sizeof(m_ptArray[0]);
+	if (m_selectPtId == -1) {
+		int ptCount = sizeof(m_ptArray) / sizeof(m_ptArray[0]);
 
-	//for (int i = 0; i < ptCount; ++i) {
-	//	if (i > 0 && i < ptCount - 1) { // sLine和eLine暂时不考虑
-	//		CPoint pt = CPoint(int(m_ptArray[i].x + 0.5), int(m_ptArray[i].y + 0.5));
+		for (int i = 0; i < ptCount; ++i) {
+				CPoint pt = CPoint(int(m_ptArray[i].x + 0.5), int(m_ptArray[i].y + 0.5));
 
-	//		if (abs(pt.x - newPt.x) < 5 && abs(pt.y - newPt.y) < 5) {
-	//			auto cursor = LoadCursor(nullptr, IDC_HAND);
-	//			SetCursor(cursor);
-	//			m_selectPtId = i;
-	//			if (m_bBtnDown) {
-	//				m_ptArray[i].x = newPt.x;
-	//				m_ptArray[i].y = newPt.y;
-	//				break;
-	//			}
-	//		}
-	//	}
-	//}
+				if (abs(pt.x - newPt.x) < 5 && abs(pt.y - newPt.y) < 5) {
+					auto cursor = LoadCursor(nullptr, IDC_HAND);
+					SetCursor(cursor);
+					if (m_bBtnDown) {
+						m_selectPtId = i;
+						break;
+					}
+				}
+		}
+	}
 
-	//if (m_selectPtId >= 0) {
-	//	UpdateData();
-	//	Invalidate(false);
-	//}
+	if (m_selectPtId >= 0) {
+		m_ptArray[m_selectPtId].x = newPt.x;
+		if (m_selectPtId == 2) { // 选中控制点2
+			m_ptArray[m_selectPtId].y = CalcPtBaseLine(m_ptArray[0], m_ptArray[1], m_ptArray[m_selectPtId].x);
+		}
+		else if (m_selectPtId == 3) { // 选中控制点3
+			m_ptArray[m_selectPtId].y = CalcPtBaseLine(m_ptArray[4], m_ptArray[5], m_ptArray[m_selectPtId].x);
+		}
+		else if (m_selectPtId < 2) { //选中直线sLine
+			m_ptArray[m_selectPtId].y = newPt.y;
+
+			// 更新控制点2，因为控制点必须与直线sLine共线
+			m_ptArray[2].y = CalcPtBaseLine(m_ptArray[0], m_ptArray[1], m_ptArray[2].x);
+		}
+		else if (m_selectPtId > 3) { // 选中直线eLine
+			m_ptArray[m_selectPtId].y = newPt.y;
+
+			// 更新控制点3，因为控制点必须与直线eLine共线
+			m_ptArray[3].y = CalcPtBaseLine(m_ptArray[4], m_ptArray[5], m_ptArray[3].x);
+		}
+
+		UpdateData();
+		Invalidate(false);
+	}
 
 	CView::OnMouseMove(nFlags, point);
 }
