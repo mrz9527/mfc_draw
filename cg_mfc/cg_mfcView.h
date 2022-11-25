@@ -41,26 +41,45 @@ protected:
 private:
 
 	void UpdateData() {
+
+		m_ptArray[4].x = m_ptArray[3].x + (m_ptArray[3].x - m_ptArray[2].x) * 1.5; // 2阶bezier1和3阶bezier2在交点处的比例为1.5，才能保证光滑连续
+		m_ptArray[4].y = m_ptArray[3].y + (m_ptArray[3].y - m_ptArray[2].y) * 1.5;
+
+		// sLine
 		for (int i = 0; i <= 1; ++i) {
 			m_sLine[i] = m_ptArray[i];
 		}
 
-		for (int i = 1; i <= 4; ++i) {
-			m_ctlPts[i - 1] = m_ptArray[i];
+		// bezier1
+		for (int i = 1; i <= 3; ++i) {
+			m_bezier1ctlPts[i - 1] = m_ptArray[i];
 		}
 
-		for (int i = 4; i <= 5; ++i) {
-			m_eLine[i - 4] = m_ptArray[i];
+		// bezier2
+		for (int i = 3; i <= 6; ++i) {
+			m_bezier2ctlPts[i - 3] = m_ptArray[i];
+		}
+
+		// eLine
+		for (int i = 6; i <= 7; ++i) {
+			m_eLine[i - 6] = m_ptArray[i];
 		}
 	}
 
 	void Draw(CDC* pDC) {
 		DrawLine(pDC, m_sLine);
 		DrawLineK(pDC, m_sLine);
-		DrawBezier(pDC);
+		DrawBezier(pDC, m_bezier1ctlPts, sizeof(m_bezier1ctlPts)/sizeof(m_bezier1ctlPts[0]));
+		DrawBezier(pDC, m_bezier2ctlPts, sizeof(m_bezier2ctlPts)/sizeof(m_bezier2ctlPts[0]));
 		DrawLine(pDC, m_eLine);
+
+		CPoint2F pt34[2];
+		pt34[0] = m_ptArray[3];
+		pt34[1] = m_ptArray[4];
+		DrawLineK(pDC, pt34);
+
 		DrawLineK(pDC, m_eLine);
-		DrawEndPt(pDC);
+		DrawPt(pDC);
 	}
 
 	void DrawLine(CDC* pDC, CPoint2F line[2]) {
@@ -109,7 +128,7 @@ private:
 		return CPoint2F((line[0].x + line[1].x) / 2, (line[0].y + line[1].y) / 2);
 	}
 	
-	void DrawEndPt(CDC* pDC) {
+	void DrawPt(CDC* pDC) {
 		CPen blackPen, * oldPen;
 		blackPen.CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
 
@@ -123,9 +142,6 @@ private:
 
 		int ptCount = sizeof(m_ptArray) / sizeof(m_ptArray[0]);
 		for (int i = 0; i < ptCount; ++i) {
-			if (i != 0 && i != ptCount - 1) {
-				continue;
-			}
 			CPoint pt = CPoint(int(m_ptArray[i].x + 0.5), int(m_ptArray[i].y + 0.5));
 			CRect rect = CRect(pt.x - 4, pt.y + 4, pt.x + 4, pt.y - 4);
 			pDC->Ellipse(rect);
@@ -147,12 +163,7 @@ private:
 		for (int i = 0; i < ptCount; ++i) {
 			CPoint pt = CPoint(int(m_ptArray[i].x), int(m_ptArray[i].y));
 			CString strPt;
-			if (i == 0)
-				strPt.Format(_T("s(%d, %d)"), pt.x, pt.y);
-			else if (i == ptCount - 1)
-				strPt.Format(_T("e(%d, %d)"), pt.x, pt.y);
-			else
-				continue;
+			strPt.Format(_T("p%d(%d, %d)"), i, pt.x, pt.y);
 
 			pDC->TextOutW(pt.x + 10, pt.y + 20, strPt);
 		}
@@ -189,17 +200,20 @@ private:
 		pDC->SelectObject(oldFont);
 	}
 
-	void DrawBezier(CDC* pDC) {
-		CBezier<CPoint2F>::DoBezier(pDC, m_ctlPts, sizeof(m_ctlPts) / sizeof(m_ctlPts[0]));
+	void DrawBezier(CDC* pDC, CPoint2F* ptArray, int count) {
+		CBezier<CPoint2F>::DoBezier(pDC, ptArray, count);
 	}
 
-	CPoint2F m_ptArray[6];
+	CPoint2F m_ptArray[8];
+	float m_k23;
 
 	// m_ptArray [0,1]构成第一条直线
 	CPoint2F m_sLine[2];
-	// m_ptArray [1,4]构成bezier控制点
-	CPoint2F m_ctlPts[4];
-	// m_ptArray [4,5]构成第二条直线
+	// m_ptArray [1,3]构成bezier1控制点,共3个点
+	CPoint2F m_bezier1ctlPts[3];
+	// m_ptArray [3,6]构成bezier2控制点,共4个点
+	CPoint2F m_bezier2ctlPts[4];
+	// m_ptArray [6,7]构成第二条直线
 	CPoint2F m_eLine[2];
 
 	bool m_bBtnDown;

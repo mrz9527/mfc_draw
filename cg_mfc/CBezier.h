@@ -69,6 +69,7 @@ public:
 
 		m_cn = nullptr;
 	}
+
 	CBezier() {
 		ReleaseCn();
 	}
@@ -76,8 +77,8 @@ public:
 	void Draw(CDC* pDC) {
 		DrawBezier(pDC);
 		DrawControlPloygon(pDC);
-		DrawControlPt(pDC);
-		DrawControlPtText(pDC);
+		/*DrawControlPt(pDC);
+		DrawControlPtText(pDC);*/
 	}
 
 	bool MakeBezier() {

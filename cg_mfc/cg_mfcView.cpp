@@ -39,19 +39,28 @@ END_MESSAGE_MAP()
 CcgmfcView::CcgmfcView() noexcept
 {
 	// TODO: 在此处添加构造代码
-
+		
+	// sLine
 	m_ptArray[0].x = -250, m_ptArray[0].y = 120;
-	m_ptArray[1].x = -200, m_ptArray[1].y = 100;
-	//m_ptArray[2].x = 0, m_ptArray[2].y = 100;
-	//m_ptArray[3].x = 0, m_ptArray[3].y = -100;
-	m_ptArray[4].x = 200, m_ptArray[4].y = -100;
-	m_ptArray[5].x = 300, m_ptArray[5].y = -150;
+	m_ptArray[1].x = -200, m_ptArray[1].y = 110;
 
-	m_ptArray[2].x = 0;
+	// bezier1
+	m_ptArray[2].x = -100;
 	m_ptArray[2].y = CalcPtBaseLine(m_ptArray[0], m_ptArray[1], m_ptArray[2].x);
+	m_ptArray[3].x = m_ptArray[2].x + 10; // dx = 10
+	m_ptArray[3].y = m_ptArray[2].y - 100; // dy = -100
+	m_k23 = -100.0f / 10.0f;
 
-	m_ptArray[3].x = 0;
-	m_ptArray[3].y = CalcPtBaseLine(m_ptArray[4], m_ptArray[5], m_ptArray[3].x);
+	// eLine
+	m_ptArray[6].x = 200, m_ptArray[6].y = -200;
+	m_ptArray[7].x = 250, m_ptArray[7].y = -210;
+
+	// bezier2
+	//m_ptArray[4].x = m_ptArray[3].x + (m_ptArray[3].x - m_ptArray[2].x) * 1.5; // 2阶bezier1和3阶bezier2在交点处的比例为1.5，才能保证光滑连续
+	//m_ptArray[4].y = m_ptArray[3].y + (m_ptArray[3].y - m_ptArray[2].y) * 1.5;
+
+	m_ptArray[5].x = 100.0f;
+	m_ptArray[5].y = CalcPtBaseLine(m_ptArray[6], m_ptArray[7], m_ptArray[5].x);
 
 	UpdateData();
 
@@ -195,38 +204,44 @@ void CcgmfcView::OnMouseMove(UINT nFlags, CPoint point)
 		int ptCount = sizeof(m_ptArray) / sizeof(m_ptArray[0]);
 
 		for (int i = 0; i < ptCount; ++i) {
-				CPoint pt = CPoint(int(m_ptArray[i].x + 0.5), int(m_ptArray[i].y + 0.5));
+			if (i == 4) {
+				continue;
+			}
 
-				if (abs(pt.x - newPt.x) < 5 && abs(pt.y - newPt.y) < 5) {
-					auto cursor = LoadCursor(nullptr, IDC_HAND);
-					SetCursor(cursor);
-					if (m_bBtnDown) {
-						m_selectPtId = i;
-						break;
-					}
+			CPoint pt = CPoint(int(m_ptArray[i].x + 0.5), int(m_ptArray[i].y + 0.5));
+
+			if (abs(pt.x - newPt.x) < 5 && abs(pt.y - newPt.y) < 5) {
+				auto cursor = LoadCursor(nullptr, IDC_HAND);
+				SetCursor(cursor);
+				if (m_bBtnDown) {
+					m_selectPtId = i;
+					break;
 				}
+			}
 		}
 	}
 
 	if (m_selectPtId >= 0) {
 		m_ptArray[m_selectPtId].x = newPt.x;
-		if (m_selectPtId == 2) { // 选中控制点2
+		
+		if (m_selectPtId < 2) { //选中直线sLine
+		m_ptArray[m_selectPtId].y = newPt.y;
+
+		// 更新点2，因为控制点必须与直线sLine共线
+		m_ptArray[2].y = CalcPtBaseLine(m_ptArray[0], m_ptArray[1], m_ptArray[2].x);
+		} else if (m_selectPtId == 2) { // 选中点2，调节bezier1
 			m_ptArray[m_selectPtId].y = CalcPtBaseLine(m_ptArray[0], m_ptArray[1], m_ptArray[m_selectPtId].x);
 		}
-		else if (m_selectPtId == 3) { // 选中控制点3
-			m_ptArray[m_selectPtId].y = CalcPtBaseLine(m_ptArray[4], m_ptArray[5], m_ptArray[m_selectPtId].x);
+		else if (m_selectPtId == 3) {
+			m_ptArray[m_selectPtId].y = newPt.y;
+		}else if (m_selectPtId == 5) { // 选中点5，调节bezier2
+			m_ptArray[m_selectPtId].y = CalcPtBaseLine(m_ptArray[6], m_ptArray[7], m_ptArray[m_selectPtId].x);
 		}
-		else if (m_selectPtId < 2) { //选中直线sLine
+		else if (m_selectPtId > 5) { // 选中直线eLine
 			m_ptArray[m_selectPtId].y = newPt.y;
 
-			// 更新控制点2，因为控制点必须与直线sLine共线
-			m_ptArray[2].y = CalcPtBaseLine(m_ptArray[0], m_ptArray[1], m_ptArray[2].x);
-		}
-		else if (m_selectPtId > 3) { // 选中直线eLine
-			m_ptArray[m_selectPtId].y = newPt.y;
-
-			// 更新控制点3，因为控制点必须与直线eLine共线
-			m_ptArray[3].y = CalcPtBaseLine(m_ptArray[4], m_ptArray[5], m_ptArray[3].x);
+			// 更新点5，因为控制点必须与直线eLine共线
+			m_ptArray[5].y = CalcPtBaseLine(m_ptArray[6], m_ptArray[7], m_ptArray[5].x);
 		}
 
 		UpdateData();
