@@ -22,6 +22,7 @@ public:
 public:
 	virtual void OnDraw(CDC* pDC);  // 重写以绘制该视图
 protected:
+	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual BOOL OnPreparePrinting(CPrintInfo* pInfo);
 	virtual void OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo);
 	virtual void OnEndPrinting(CDC* pDC, CPrintInfo* pInfo);
