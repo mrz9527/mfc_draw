@@ -82,7 +82,7 @@ void CcgmfcView::DoubleBuffer(CDC* pDC)
 
 	//Draw(pDC);
 	
-	pDC->BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0,0, SRCCOPY);	
+	//pDC->BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0,0, SRCCOPY);	
 }
 void CcgmfcView::OnDraw(CDC *pDC)
 {

@@ -5,6 +5,7 @@
 #pragma once
 #include "CBezier.h"
 
+typedef CPoint2D<float> FloatPoint;
 class CcgmfcView : public CView
 {
 protected: // 仅从序列化创建
@@ -61,7 +62,8 @@ private:
 		DrawEndPt(pDC);*/
 	}
 
-	void DrawLine(CDC* pDC, CPoint2F line[2]) {
+	template<typename Type>
+	void DrawLine(CDC* pDC, CPoint2D<Type> line[2]) {
 		CPen redPen, * oldPen;
 		redPen.CreatePen(0, 1, RGB(255, 0, 0));
 		oldPen = (CPen*)pDC->SelectObject(&redPen);
@@ -134,17 +136,17 @@ private:
 	}
 
 	void DrawBezier(CDC* pDC) {
-		CBezier<CPoint2F>::DoBezier(pDC, m_ctlPts, sizeof(m_ctlPts) / sizeof(m_ctlPts[0]));
+		CBezier<FloatPoint>::DoBezier(pDC, m_ctlPts, sizeof(m_ctlPts) / sizeof(m_ctlPts[0]));
 	}
 
-	CPoint2F m_ptArray[6];
+	FloatPoint m_ptArray[6];
 
 	// m_ptArray [0,1]构成第一条直线
-	CPoint2F m_sLine[2];
+	FloatPoint m_sLine[2];
 	// m_ptArray [1,4]构成bezier控制点
-	CPoint2F m_ctlPts[4];
+	FloatPoint m_ctlPts[4];
 	// m_ptArray [4,5]构成第二条直线
-	CPoint2F m_eLine[2];
+	FloatPoint m_eLine[2];
 
 	bool m_bBtnDown;
 	int m_selectPtId;

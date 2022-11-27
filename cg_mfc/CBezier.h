@@ -5,38 +5,40 @@ using std::vector;
 
 #define FLOAT_PRECISION 0.000001f
 
-struct CPoint2F {
-	float x = 0.0f;
-	float y = 0.0f;
+template<typename T>
+struct CPoint2D {
+	typedef T ElemType;
+	ElemType x;
+	ElemType y;
 
 public:
-	CPoint2F() {
-		x = 0.0f;
-		y = 0.0f;
+	CPoint2D() {
+		x = (ElemType)0;
+		y = (ElemType)0;
 	}
 
-	CPoint2F(float ix, float iy) {
-		x = ix; 
+	CPoint2D(ElemType ix, ElemType iy) {
+		x = ix;
 		y = iy;
 	}
-	CPoint2F(const CPoint2F& other) {
+	CPoint2D(const CPoint2D& other) {
 		this->x = other.x;
 		this->y = other.y;
 	}
 
-	CPoint2F operator*(float a) {
+	CPoint2D operator*(ElemType a) {
 		this->x *= a;
 		this->y *= a;
 		return *this;
 	}
 
-	CPoint2F operator+(const CPoint2F& other) {
+	const CPoint2D& operator+(const CPoint2D& other) {
 		this->x += other.x;
 		this->y += other.y;
 		return *this;
 	}
 
-	CPoint2F& operator+=(const CPoint2F& other) {
+	CPoint2D& operator+=(const CPoint2D& other) {
 		this->x += other.x;
 		this->y += other.y;
 		return *this;
@@ -85,7 +87,7 @@ public:
 
 		if (!MakeCn()) return false;
 
-		int bezierPtCount = 1.0f / m_step + 1;
+		int bezierPtCount = int(1.0f / m_step) + 1;
 		m_bezierPtArray.reserve(bezierPtCount);
 
 		float t = 0.0f;
