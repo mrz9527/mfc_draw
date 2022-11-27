@@ -94,7 +94,7 @@ void CcgmfcView::OnDraw(CDC *pDC)
 	pDC->TextOutW(200 + 5, 200 + 5, L"(200,200)");
 	
 	CString str;
-	str.Format(L"rect:LeftTop(%d,%d)\t RightBottom(%d,%d)", rect.TopLeft().x, rect.TopLeft().y, rect.BottomRight().x, rect.BottomRight().y);
+	str.Format(L"rect:LeftTop(%d, %d)\t RightBottom(%d, %d)", rect.TopLeft().x, rect.TopLeft().y, rect.BottomRight().x, rect.BottomRight().y);
 	pDC->TextOutW(200 + 5, 10 + 5, str);
 }
 
