@@ -75,34 +75,34 @@ BOOL CcgmfcView::PreCreateWindow(CREATESTRUCT& cs)
 void CcgmfcView::DoubleBuffer(CDC* pDC)
 {
 	// 自定义pDC二维坐标系
-	CRect rect;
-	GetClientRect(&rect);
-	CoordSystem::SetNormalCoordSystem(pDC, rect);
+	CRect originRect, rect;
+	GetClientRect(&originRect);
+	rect.CopyRect(originRect);
 
-	// 声明memDC
 	CDC memDC;
 	memDC.CreateCompatibleDC(pDC);
+
+	// 设置pDC坐标系为符合思维的标准坐标系
+	CoordSystem::SetNormalCoordSystem(pDC, originRect);
+	// 设置memDC坐标系，memDC坐标系与pDC坐标系完全一致
+	CoordSystem::SetNormalCoordSystem(&memDC, originRect);
 
 	// 为memDC创建兼容位图，颜色为黑色
 	CBitmap bitmap, * oldBitmap;
 	bitmap.CreateCompatibleBitmap(pDC, rect.Width(), rect.Height());  // 默认黑色位图
 	oldBitmap = (CBitmap*)memDC.SelectObject(&bitmap);
-	//memDC.FillSolidRect(rect, pDC->GetBkColor()); // 填充客户区背景色，覆盖黑色位图
+
+	// 设置客户区背景色，而客户区的区域由。LT(-502,210) RB(503,-211)
+	//rect.SetRect(CPoint(-502, 210), CPoint(503, -211)); 和下面的效果一致
+	rect.OffsetRect(-rect.Width() / 2, -rect.Height() / 2); // LT(-502,-210) RB(503,211)
 	memDC.FillSolidRect(rect, RGB(255,250,0)); // 填充客户区背景色，覆盖黑色位图
 
-	// 关键点
-	rect.OffsetRect(-rect.Width()/2, -rect.Height()/2);
-
-	// 为memDC自定义与pDC相同的二维坐标系
-
-
-	CoordSystem::SetNormalCoordSystem(&memDC, rect);
+	//rect.OffsetRect(-rect.Width()/2, -rect.Height()/2);
 
 	// 在memDC上绘制图形
 	Draw(&memDC);
 	
 	// memDC中的图形拷贝到pDC上
-	//pDC->BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0, 0, SRCCOPY);
 	pDC->BitBlt(rect.left, rect.top, rect.Width(), rect.Height(), &memDC, rect.left, rect.top, SRCCOPY);
 	memDC.SelectObject(oldBitmap);
 	bitmap.DeleteObject();

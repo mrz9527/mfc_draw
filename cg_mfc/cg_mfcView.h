@@ -56,10 +56,10 @@ private:
 
 	void Draw(CDC* pDC) {
 		DrawLine(pDC, m_sLine);
-		DrawLineK(pDC, m_sLine);
+		DrawLineInfo(pDC, m_sLine);
 		DrawBezier(pDC);
 		DrawLine(pDC, m_eLine);
-		DrawLineK(pDC, m_eLine);
+		DrawLineInfo(pDC, m_eLine);
 		DrawEndPt(pDC);
 	}
 
@@ -163,7 +163,7 @@ private:
 		pDC->SelectObject(oldBrush);
 	}
 
-	void DrawLineK(CDC* pDC, CPoint2F line[2]) {
+	void DrawLineInfo(CDC* pDC, CPoint2F line[2]) {
 		// 绘制文字
 		auto oldBkMode = pDC->SetBkMode(TRANSPARENT);
 		pDC->SetTextColor(RGB(128, 128, 128));
